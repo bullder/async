@@ -1,40 +1,541 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+    <title>reveal.js</title>
 
-		<link rel="stylesheet" href="dist/reset.css">
-		<link rel="stylesheet" href="dist/reveal.css">
-		<link rel="stylesheet" href="dist/theme/black.css" id="theme">
+    <link rel="stylesheet" href="dist/reset.css">
+    <link rel="stylesheet" href="dist/reveal.css">
+    <link rel="stylesheet" href="dist/theme/black.css" id="theme">
 
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
-		</div>
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+	<style>
+		.dark-bg{
+			background-color: rgba(0, 0, 0, 0.5); color: #fff; padding: 20px; border-radius: 20px;
+		}
+		.mermaid-chart{
+			width: 80%;
+		}
+		.framework-table td{
+			vertical-align: middle;
+		}
+		.framework-logo{
+			display: block; margin: 0; width: 150px
+		}
+		.cm-table{width: 100%}
+		.cm-table-non{width: 50%}
+		.cm-table-non, .reveal table.cm-table th{text-align: center; width: 30%}
+		.cm-table-non td, .cm-table td{height: 100px}
+		.cm-wait{background-color: #e63946}
+		.cm-black{background-color: black}
+		.cm-db{background-color: #a8dadc}
+		.cm-index{background-color: #457b9d}
+		.cm-cache{background-color: #1d3557}
+	</style>
+</head>
+<body>
+<div class="reveal">
+    <div class="slides">
+		<section>
+			<section data-markdown>
+				# Asynchronous
+				is the ability of a software system not to block the main thread of execution.
+			</section>
+			<section data-markdown>
+				# An asynchronous operation
+				is an operation that does not blocking flow execution of a program until it completes.
+			</section>
+		</section>
+		<section>
+			<section data-markdown>
+### Blocking operations
+```[php] [|6]
+public function update(User $user)
+{
+	try {
+		$sql = 'UPDATE ...';
 
-		<script src="dist/reveal.js"></script>
-		<script src="plugin/notes/notes.js"></script>
-		<script src="plugin/markdown/markdown.js"></script>
-		<script src="plugin/highlight/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
+		return $this->connection->execute($sql, $user->data());
+	} catch (\PDOException $error) {
+		log($error->getMessage());
+	}
 
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
-			});
-		</script>
-	</body>
+	return true;
+}
+```
+			</section>
+			<section data-markdown>
+				### Blocking operations
+				* File operations (fwrite, file_get_contents)
+				* Database interaction (PDOConnection, RedisClient)
+				* Proceses (exec, system, proc_open)
+				* stdin/stdout (readline, echo, print)
+				* Timers (sleep, usleep)
+			</section>
+			<section data-markdown>
+				### Non-blocking sql client v.0
+```[php] [|3|4|5|6|8]
+public function execAsync(string $query, array $params = [])
+{
+	$socket = stream_socket_client('127.0.0.1:3306', ...);
+	stream_set_blocking($socket, false);
+	$data = $this->packBinarySQL($query, $params);
+	socket_write($socket, $data, strlen($data));
+
+	// but what can we return?
+}
+```
+			</section>
+			<section data-background-video="img/promise.mp4">
+				<div class="dark-bg">
+					<h1>Promise</h1>
+				</div>
+			</section>
+			<section>
+				<h1>Promise</h1>
+				<img class="mermaid-chart" src="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBQKFByb21pc2UpXG4gICAgUC0tPlYob25SZWplY3QpXG4gICAgUC0tPkEob25SZXNvbHZlKVxuICAgIHN0eWxlIFAgc3Ryb2tlOm5vbmVcbiAgICBzdHlsZSBWIGZpbGw6I2VmNDc2Ziwgc3Ryb2tlOm5vbmVcbiAgICBzdHlsZSBBIGZpbGw6IzUyYjc4OCwgc3Ryb2tlOm5vbmUiLCJtZXJtYWlkIjp7InRoZW1lIjoibmV1dHJhbCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ">
+			</section>
+			<section data-markdown>
+				### Proof of Concept
+				```[php]
+interface Promise
+{
+	const
+		STATUS_PENDING = 0,
+		STATUS_RESOLVED = 1,
+		STATUS_REJECTED = 2;
+
+	public function onResolve(callable $callback);
+	public function onReject(callable $callback);
+	public function resolve($data);
+	public function reject(\Throwable $error);
+}
+				```
+			</section>
+			<section>
+<!--				graph TD-->
+<!--				D(Deffered)-->
+<!--				V(onReject)-->
+<!--				P(Promise)-->
+<!--				A(onResolve)-->
+<!--				D&ndash;&gt;V-->
+<!--				D&ndash;&gt;P-->
+<!--				D&ndash;&gt;A-->
+<!--				style P stroke:none-->
+<!--				style P stroke:none-->
+<!--				style V fill:#ef476f, stroke:none-->
+<!--				style A fill:#52b788, stroke:none-->
+<!--				style D fill:#feeafa, stroke:none-->
+				<h1>Deffered</h1>
+				<img class="mermaid-chart" src="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBEKERlZmZlcmVkKVxuICAgIFYob25SZWplY3QpXG4gICAgUChQcm9taXNlKVxuICAgIEEob25SZXNvbHZlKVxuICAgIEQtLT5WXG4gICAgRC0tPlBcbiAgICBELS0-QVxuICAgIHN0eWxlIFAgc3Ryb2tlOm5vbmVcbiAgICBzdHlsZSBQIHN0cm9rZTpub25lXG4gICAgc3R5bGUgViBmaWxsOiNlZjQ3NmYsIHN0cm9rZTpub25lXG4gICAgc3R5bGUgQSBmaWxsOiM1MmI3ODgsIHN0cm9rZTpub25lXG4gICAgc3R5bGUgRCBmaWxsOiNmZWVhZmEsIHN0cm9rZTpub25lIiwibWVybWFpZCI6eyJ0aGVtZSI6Im5ldXRyYWwifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0">
+			</section>
+			<section data-markdown>
+				### Non-blocking sql client v.1
+				```[php] [8]
+public function execAsync(string $query, array $params = [])
+{
+	$socket = stream_socket_client('127.0.0.1:3306', ...);
+	stream_set_blocking($socket, false);
+	$data = $this->packBinarySQL($query, $params);
+	socket_write($socket, $data, strlen($data));
+
+	return $deferred->promise();
+}
+				```
+			</section>
+			<section data-markdown>
+				### Let's use it!
+				```[php] [|1|3-5|7-9]
+$promise = $this->execAsync($sql, $user->data());
+
+$promise->onResolve(function (int $rows) {
+	echo "Affected rows: {$rows}";
+});
+
+$promise->onReject(function (\Throwable $error) {
+	log($error->getMessage());
+});
+				```
+			</section>
+			<section data-background-video="img/who.mp4">
+			</section>
+			<section data-background="img/loop.png">
+			</section>
+			<section data-markdown>
+				### Proof of concept for Event Loop
+				```[php] [|4|6-8|7|10]
+public static function run()
+{
+	while (true) {
+		stream_select($readSockets, $writeSockets, null, 0);
+
+		foreach ($readSockets as $i => $socket) {
+			call_user_func(self::readCallbacks[$i], $socket);
+		}
+
+	// Do same for write sockets
+	}
+}
+				```
+			</section>
+			<section data-markdown>
+### Non-blocking sql client v.2
+```[php] [|5-7]
+public function execAsync(string $query, array $params = [])
+{
+	$deferred = new Deferred;
+
+	Loop::onReadable($socket, function ($socket) use ($deferred) {
+		$deferred->resolve(socket_read($socket));
+	});
+
+	return $deferred->promise();
+}
+```
+			</section>
+			<section data-markdown>
+				### Event loop can do:
+				* Timer handling (setTimeout, setInterval. Hello JavaScript!)
+				* Repeat and limit execution
+				* Handle sys calls and process control
+			</section>
+			<section data-background="img/do.gif">
+			</section>
+		</section>
+		<section>
+			<h2>What do we have?</h2>
+			<table class="framework-table">
+				<thead>
+				<tr>
+					<th>Library</th>
+					<th>Supports</th>
+					<th>Type</th>
+					<th>Stars</th>
+					<th></th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr>
+					<td><a href="https://github.com/reactphp/reactphp">ReactPHP</a></td>
+					<td>5.3+</td>
+					<td>Promise A</td>
+					<td>
+						7.9k
+					</td>
+					<td><img class="framework-logo" src="img/logo/reactphp.svg" alt="ReactPHP"/></td>
+				</tr>
+				<tr>
+					<td><a href="https://github.com/amphp/amp">amphp</a></td>
+					<td>7.0+</td>
+					<td>Coroutines</td>
+					<td>
+						3.1k
+					</td>
+					<td><img class="framework-logo" src="img/logo/amphp.png" alt="amphp"/></td>
+				</tr>
+				<tr>
+					<td><a href="https://github.com/swoole/swoole-src">Swoole</a></td>
+					<td>开发工</td>
+					<td>Coroutine Fiber</td>
+					<td>
+						16.5k
+					</td>
+					<td><img class="framework-logo" src="img/logo/swoole.png" alt="swoole"/></td>
+				</tr>
+				</tbody>
+			</table>
+		</section>
+		<section>
+			<section data-markdown>
+			### Non-blocking sql client v.ReactPHP
+```[php] [|5-7|8-10]
+$connection = (new ConnectionFactory)->createLazyConnection();
+
+$promise = $connection->query('UPDATE...');
+$promise->then(
+	function (QueryResult $command) {
+		echo count($command->resultRows) . ' row(s) in set.';
+	},
+	function (Exception $error) {
+		echo 'Error: ' . $error->getMessage();
+	}
+);
+```
+			</section>
+			<section data-markdown>
+				### Welcome to callback hell!
+				```[php]
+$promise
+	->then(function ($data) {
+		return new Promise(...);
+	})
+	->then(function ($data) {
+	...
+	}, function ($error) {
+		log($error);
+	})
+	...
+				```
+			</section>
+
+			<section>
+				<h2>Hello, JavaScript, my old friend...</h2>
+				<img src="img/hell.gif" alt="callback hell" />
+			</section>
+		</section>
+		<section>
+			<section data-markdown>
+				### Non-blocking sql client v.amphp
+				```[php][|4]
+$pool = Mysql\pool("host=127.0.0.1 port=3306 db=test");
+
+try {
+	$result = yield $pool->query("UPDATE ...");
+	echo $result->affectedRows . ' row(s) in set.';
+} catch (\Throwable $error) {
+	echo 'Error: ' . $error->getMessage();
+}
+				```
+			</section>
+			<section data-background="img/yield.gif">
+				<div class="dark-bg">
+					<h1>Yield</h1>
+				</div>
+			</section>
+			<section data-markdown>
+				### Yield? Generators!
+				```[php][]
+function generator($counter = 1)
+{
+	yield $counter++;
+	echo "A";
+	yield $counter;
+	echo "B";
+	yield ++$counter;
+}
+				```
+				```[php][]
+foreach (generator(1) as $value) {
+	echo $value;
+}
+				```
+				```[php][]
+Output for 8.0.2 | took 17 ms, 17.05 MiB
+1A2B3
+				```
+				```[php][]
+				$generator = generator(1);
+				while ($generator->valid()) {
+					echo $generator->current();
+					$generator->next();
+				}
+				```
+			</section>
+			<section data-markdown>
+				### Generators? Coroutines!
+				```[php][|2-4]
+function printer() {
+	while (true) {
+		echo yield;
+	}
+}
+
+$print = printer();
+$print->send('Hello');
+$print->send(' Smartbox');
+$print->send('!');
+
+// Output for 8.0.2 | took 21 ms, 17.25 MiB
+// Hello Smatbox!
+				```</section>
+			<section data-markdown>
+				### Coroutines!
+				```[php][]
+function printer() {
+	try {
+		echo yield;
+	} catch (\Throwable $e) {
+		echo $e->getMessage();
+	}
+}
+
+printer()->throw(new \Exception('Ooops...'));
+				```
+				Coroutine supports stopping and continuing execution while maintaining the current state.
+
+				Coroutine remembers its call stack, data inside, and can use them in the future.
+			</section>
+			<section data-markdown>
+				### Generators and Promises!
+				```[php][]
+class Generator
+{
+	public function send($data);
+	public function throw(\Throwable $error);
+}
+
+class Promise
+{
+	public function resolve($data);
+	public function reject(\Throwable $error);
+}
+				```
+			</section>
+
+			<section data-markdown>
+				### Let's use it!
+				```[php] [|3|5-8|10-13]
+function recoil(\Generator $generator)
+{
+	$promise = $generator->current();
+
+	$promise->onResolve(function($data) use ($generator) {
+		$generator->send($data);
+		recoil($generator);
+	};
+
+	$promise->onReject(function ($error) use ($generator) {
+		$generator->throw($error);
+		recoil($generator);
+	});
+}
+				```
+			</section>
+		</section>
+		<section>
+			<section>
+				<h2>Cooperative multitasking</h2>
+				<table class="cm-table">
+					<thead>
+					<tr>
+						<th colspan="6">Database</th>
+						<th colspan="6">Search Index</th>
+						<th colspan="6">Cache</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr>
+						<td class="cm-db" colspan="6"></td>
+						<td class="cm-index" colspan="6"></td>
+						<td class="cm-cache" colspan="6"></td>
+					</tr>
+					</tbody>
+				</table>
+			</section>
+			<section>
+				<h2>Cooperative multitasking IRL</h2>
+				<table class="cm-table">
+					<thead>
+					<tr>
+						<th colspan="6">Database</th>
+						<th colspan="6">Search Index</th>
+						<th colspan="6">Cache</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr>
+						<td class="cm-db"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-db"></td>
+						<td class="cm-index"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-index"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-index"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-wait"></td>
+						<td class="cm-cache"></td>
+					</tr>
+					</tbody>
+				</table>
+			</section>
+			<section>
+				<h2>Cooperative multitasking. What if?</h2>
+				<table class="cm-table">
+					<thead>
+					<tr>
+						<th colspan="6">Database</th>
+						<th colspan="6">Search Index</th>
+						<th colspan="6">Cache</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr>
+						<td class="cm-db"></td>
+						<td class="cm-black"></td>
+						<td class="cm-black"></td>
+						<td class="cm-black"></td>
+						<td class="cm-black"></td>
+						<td class="cm-db"></td>
+						<td class="cm-index"></td>
+						<td class="cm-black"></td>
+						<td class="cm-index"></td>
+						<td class="cm-black"></td>
+						<td class="cm-black"></td>
+						<td class="cm-index"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-black"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-black"></td>
+						<td class="cm-cache"></td>
+					</tr>
+					</tbody>
+				</table>
+			</section>
+			<section>
+				<h2>Cooperative multitasking. In Non-Blocking World</h2>
+				<table class="cm-table-non">
+					<thead>
+					<tr>
+						<th colspan="2">Database</th>
+						<th colspan="3">Search Index</th>
+						<th colspan="4">Cache</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr>
+						<td class="cm-db"></td>
+						<td class="cm-db"></td>
+						<td class="cm-index"></td>
+						<td class="cm-index"></td>
+						<td class="cm-index"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-cache"></td>
+						<td class="cm-cache"></td>
+					</tr>
+					</tbody>
+				</table>
+			</section>
+		</section>
+	</div>
+</div>
+
+<script src="dist/reveal.js"></script>
+<script src="plugin/notes/notes.js"></script>
+<script src="plugin/markdown/markdown.js"></script>
+<script src="plugin/highlight/highlight.js"></script>
+<script>
+    // More info about initialization & config:
+    // - https://revealjs.com/initialization/
+    // - https://revealjs.com/config/
+    Reveal.initialize({
+        hash: true,
+
+        // Learn about plugins: https://revealjs.com/plugins/
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+    });
+</script>
+</body>
 </html>
