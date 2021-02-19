@@ -1,16 +1,15 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <title>reveal.js</title>
+    <title>Asynchronous world</title>
 
     <link rel="stylesheet" href="dist/reset.css">
     <link rel="stylesheet" href="dist/reveal.css">
     <link rel="stylesheet" href="dist/theme/black.css" id="theme">
 
-    <!-- Theme used for syntax highlighted code -->
     <link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
 	<style>
 		.dark-bg{
@@ -34,11 +33,16 @@
 		.cm-db{background-color: #a8dadc}
 		.cm-index{background-color: #457b9d}
 		.cm-cache{background-color: #1d3557}
+		.as-container{display: flex;}
+		.as-column{flex: 1;}
 	</style>
 </head>
 <body>
 <div class="reveal">
     <div class="slides">
+		<section>
+			<img src="img/splash.png">
+		</section>
 		<section>
 			<section data-markdown>
 				# Asynchronous
@@ -280,7 +284,6 @@ $promise
 	...
 				```
 			</section>
-
 			<section>
 				<h2>Hello, JavaScript, my old friend...</h2>
 				<img src="img/hell.gif" alt="callback hell" />
@@ -509,8 +512,8 @@ function recoil(\Generator $generator)
 						<td class="cm-db"></td>
 						<td class="cm-index"></td>
 						<td class="cm-index"></td>
-						<td class="cm-index"></td>
 						<td class="cm-cache"></td>
+						<td class="cm-index"></td>
 						<td class="cm-cache"></td>
 						<td class="cm-cache"></td>
 						<td class="cm-cache"></td>
@@ -518,6 +521,158 @@ function recoil(\Generator $generator)
 					</tbody>
 				</table>
 			</section>
+		</section>
+		<section>
+			<section>
+				<h2>Handling request</h2>
+				<div class="as-container">
+					<div class="as-column">
+						<img src="img/nginx.png" alt="nginx as reverse proxy">
+					</div>
+					<div class="as-column">
+						<ul>
+							<li>
+								Advantages:
+								<ul>
+									<li>Simple error handling</li>
+									<li>No memory leaks</li>
+								</ul>
+							</li>
+							<li>
+								Disadvantages:
+								<ul>
+									<li>N+1 limit for workers</li>
+									<li>Context switch overhead</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</section>
+			<section data-markdown>
+				### Async handling
+```[php] [|2-3|5|7-12|13]
+Loop::run(function () {
+	$app = new Application();
+	$app->bootstrap();
+
+	$sockets = [Socket\listen('0.0.0.0:80')];
+
+	$server = new Server($sockets, new CallableRequestHandler(
+		function (Request $request) use ($app) {
+			$r = yield $app->dispatch($request);
+			return new Response(Status::OK, [], $response);
+		})
+	);
+	yield $server->start();
+});
+```
+			</section>
+			<section data-markdown>
+				### Problems
+				* Memory leaks
+				* Blocking operations
+				* Library support
+				* Types (yield returns generics?)
+				* No standards for promises
+			</section>
+		</section>
+		<section data-background="img/other.png">
+			<div class="dark-bg">
+				<h2>Should I use it in prod? Probably not</h2>
+			</div>
+		</section>
+		<section>
+			<section data-background="img/mib.gif">
+				<div class="dark-bg">
+					<p>Situation is under control. <br />Calm down, please.<br /> Give me your attention for a moment.<br />I'll be glad to tell you what happened.</p>
+				</div>
+			</section>
+			<section data-markdown>
+				### [RFC::Fibers](https://wiki.php.net/rfc/fibers) feat [AMP v3](https://github.com/amphp/amp/tree/v3)
+				```[php] [|6-8|10-11|13-17]
+				use Amp\Delayed;
+				use Amp\Loop;
+				use function Amp\async;
+				use function Amp\await;
+
+				$callback = function (int $id): int {
+					return await(new Delayed(1000, $id));
+				};
+
+				$result = $callback(1);
+				\var_dump($result);
+
+				$result = await([
+					async($callback, 2),
+					async($callback, 3),
+				]);
+				\var_dump($result);
+				```
+			</section>
+			<section>
+				<h2>Bright nearest future</h2>
+				<iframe height="210px" width="100%"
+						src="https://www.redditmedia.com/r/PHP/comments/kf0rgz/php_rfc_fibers/gg5uts6/?embed=true&amp;context=0&amp;depth=1&amp;showedits=false&amp;created=2020-12-28T09:04:12.318153+00:00&amp;uuid=a71da7d6-48eb-11eb-8053-0ea790f3dd73&amp;showmore=false"></iframe>
+			</section>
+		</section>
+		<section>
+			<h2>Where is the <a href="https://www.toptal.com/back-end/server-side-io-performance-node-php-java-go">profit?</a></h2>
+			<img src="img/bench.png" alt="benchmark async" />
+		</section>
+		<section>
+				<h2>But I want something to play right now! Go for <a href="https://roadrunner.dev/">it</a></h2>
+			<img src="img/roadrunner.png" alt="roadrunner" />
+		</section>
+		<section>
+			<section data-background="white">
+				<img src="img/go.gif" alt="gopher">
+			</section>
+			<section>
+				<h2>But why?</h2>
+				<img src="img/golang-what.gif" alt="gopher">
+			</section>
+			<section data-markdown>
+				### It is simple
+				* No classes
+				* No inheritance
+				* No constructors
+				* No annotations
+				* No generics
+				* No exceptions
+			</section>
+			<section data-markdown>
+				### Meanwhile
+				* Async by design
+				* Goroutines
+				* Garbage collection
+				* Strict typing
+				* Active community
+				* Single binary docker container
+				* DI and ORM - bad practice
+				* Cross-platform compilation
+			</section>
+			<section>
+				<h2>Success story #0</h2>
+				<p>Badoo - Consume FacebookApi x20 faster</p>
+				<img src="img/story0.png" alt="badoo">
+			</section>
+			<section>
+				<h2>Success story #1</h2>
+				<p>Mail.Ru - Billion pushes with Go</p>
+				<img src="img/story1.png" alt="badoo">
+			</section>
+			<section>
+				<h2>Success story #2</h2>
+				<p>tutu.ru - Rebooking tickets</p>
+				<img src="img/story2.png" alt="tutu">
+			</section>
+			<section>
+				<h2>Success story #3</h2>
+				<img src="img/story3.png" alt="go in apps">
+			</section>
+		</section>
+		<section data-background-video="img/ty.mp4">
 		</section>
 	</div>
 </div>
