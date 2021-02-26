@@ -249,6 +249,15 @@ public function execAsync(string $query, array $params = [])
 					</td>
 					<td><img class="framework-logo" src="img/logo/swoole.png" alt="swoole"/></td>
 				</tr>
+				<tr>
+					<td><a href="https://github.com/walkor/Workerman">Workerman</a></td>
+					<td>中文主</td>
+					<td>PCNTL Ext</td>
+					<td>
+						9.1k
+					</td>
+					<td><img class="framework-logo" src="img/logo/workerman.png" alt="workerman"/></td>
+				</tr>
 				</tbody>
 			</table>
 		</section>
@@ -671,6 +680,79 @@ Loop::run(function () {
 				<h2>Success story #3</h2>
 				<img src="img/story3.png" alt="go in apps">
 			</section>
+			<section>
+				<h2>Story #4</h2>
+				<p><a href="http://gitlab.production.smartbox.com/michael.garifullin/jarvis-notify">jarvis-notify</a></p>
+				<table class="framework-table">
+					<thead>
+					<tr>
+						<th>Image</th>
+						<th>Docker image</th>
+						<th>Size, Mb</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr>
+						<td>Alpine + curl + jq</td>
+						<td>jb/curl</td>
+						<td>10.1</td>
+					<tr>
+					<tr>
+						<td>raw Go</td>
+						<td>jb-utils/go-notify</td>
+						<td>5.21</td>
+					</tr>
+						<td>Alpine + Bash + Go</td>
+						<td>jb-utils/notify</td>
+						<td>10.8</td>
+					</tr>
+					</tbody>
+				</table>
+			</section>
+		</section>
+		<section>
+			<section data-background="img/one.jpg">
+				<h2 class="r-fit-text">
+					One more thing
+					<br />
+					<br />
+					<br />
+					<br />
+					<br />
+				</h2>
+			</section>
+			<section data-background="white">
+				<img src="img/ws.svg" alt="web socket">
+			</section>
+			<section data-markdown>
+				### Websocket in javascript
+```[javascript] [|1|3-4|6-8]
+const socket = new WebSocket('ws://localhost:8080');
+
+socket.addEventListener('open', function (event) {
+	socket.send('Hello Server!');
+});
+
+socket.addEventListener('message', function (event) {
+	console.log('Message from server ', event.data);
+});
+```
+			</section>
+			<section data-markdown>
+			### Websocket in go
+```[go] []
+func Server() {
+	http.HandleFunc(
+		"/",
+		func(w http.ResponseWriter, r *http.Request) {
+			ws, err := NewHandler(w, r)
+			if err != nil {}
+			if err = ws.Handshake(); err != nil { }
+		}
+	)
+}
+```
+		</section>
 		</section>
 		<section data-background-video="img/ty.mp4">
 		</section>
