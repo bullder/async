@@ -6,6 +6,14 @@
 
     <title>Asynchronous world</title>
 
+	<link rel="apple-touch-icon" sizes="76x76" href="img/favicon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+	<link rel="manifest" href="img/favicon/site.webmanifest">
+	<link rel="mask-icon" href="img/favicon/safari-pinned-tab.svg" color="#5bbad5">
+	<meta name="msapplication-TileColor" content="#da532c">
+	<meta name="theme-color" content="#ffffff">
+
     <link rel="stylesheet" href="dist/reset.css">
     <link rel="stylesheet" href="dist/reveal.css">
     <link rel="stylesheet" href="dist/theme/black.css" id="theme">
@@ -35,6 +43,7 @@
 		.cm-cache{background-color: #1d3557}
 		.as-container{display: flex;}
 		.as-column{flex: 1;}
+		.ws-table img {max-width: 50px}
 	</style>
 </head>
 <body>
@@ -718,15 +727,14 @@ Loop::run(function () {
 					<br />
 					<br />
 					<br />
-					<br />
 				</h2>
 			</section>
 			<section data-background="white">
 				<img src="img/ws.svg" alt="web socket">
 			</section>
 			<section data-markdown>
-				### Websocket in javascript
-```[javascript] [|1|3-4|6-8]
+				### Websockets in javascript
+```[javascript] []
 const socket = new WebSocket('ws://localhost:8080');
 
 socket.addEventListener('open', function (event) {
@@ -739,20 +747,75 @@ socket.addEventListener('message', function (event) {
 ```
 			</section>
 			<section data-markdown>
-			### Websocket in go
+			### Websockets in go
 ```[go] []
-func Server() {
-	http.HandleFunc(
-		"/",
-		func(w http.ResponseWriter, r *http.Request) {
-			ws, err := NewHandler(w, r)
-			if err != nil {}
-			if err = ws.Handshake(); err != nil { }
-		}
-	)
-}
+import (
+	"net/http"
+	"some/websocket"
+)
+
+http.HandleFunc("/v1/ws", func(w http.ResponseWriter, r *http.Request) {
+	conn, _ := websocket.Upgrade(r, w)
+	ch := NewChannel(conn)
+	//...
+})
 ```
-		</section>
+			</section>
+			<section>
+				<h2>Websockets in php</h2>
+				<table class="framework-table ws-table">
+					<thead>
+					<tr>
+						<th>Library</th>
+						<th></th>
+						<th>Stars</th>
+						<th></th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr>
+						<td><a href="https://github.com/ratchetphp/Ratchet">Ratchet</a></td>
+						<td>PSR-4</td>
+						<td>
+							5.3k
+						</td>
+						<td><img class="framework-logo" src="img/logo/ws/ratchet.png" alt="Ratchet"/></td>
+					</tr>
+					<tr>
+						<td><a href="https://github.com/Textalk/websocket-php">websocket-php</a></td>
+						<td></td>
+						<td>
+							0.5k
+						</td>
+						<td><img class="framework-logo" src="img/logo/ws/websocket-php.png" alt="websocket php"/></td>
+					</tr>
+					<tr>
+						<td><a href="https://github.com/pusher/pusher-http-php">pusher-http-php</a></td>
+						<td>3rd party</td>
+						<td>
+							1.1k
+						</td>
+						<td><img class="framework-logo" src="img/logo/ws/pusher.svg" alt="pusher"/></td>
+					</tr>
+					<tr>
+						<td><a href="https://github.com/kakserpom/phpdaemon">phpdaemon</a></td>
+						<td>Is it still alive?</td>
+						<td>
+							1.5k
+						</td>
+						<td><img class="framework-logo" src="img/logo/ws/phpdaemon.png" alt="phpdaemon"/></td>
+					</tr>
+					<tr>
+						<td><a href="https://github.com/centrifugal/centrifugo">Centrifugo</a></td>
+						<td>Language agnostic</td>
+						<td>
+							4.9k
+						</td>
+						<td><img class="framework-logo" src="img/logo/ws/centrifugo.png" alt="centrifugo"/></td>
+					</tr>
+					</tbody>
+				</table>
+			</section>
 		</section>
 		<section data-background-video="img/ty.mp4">
 		</section>
